@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS -->
+    <link href="./css/editor.css" rel="stylesheet">
+
+    <title>Editor - Amped Core Global</title>
+  </head>
+  <body>
+    
+    <div class="__body_wrapper">
+      <div class="container">
+
+        <div class="__form_wrapper">
+
+          <h1 id="__site_title" class="collapsed" data-bs-toggle="collapse" data-bs-target="#__form_container" aria-expanded="true" aria-controls="__form_container">HTML Editor</h1>
+
+          <div id="__form_container" class="collapse">
+            <div class="__form">
+              <div class="__form_controls">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-file">
+                      <input class="form-control" type="file"accept=".xlsx" id="__form_file">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" value="" id="__fitment_chart" checked>
+                      <label class="form-check-label" for="__fitment_chart">
+                        Include: Fitment Chart
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" value="" id="__part_numbers" checked>
+                      <label class="form-check-label" for="__part_numbers">
+                        Include: Interchange Part Numbers
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" value="" id="__product_description">
+                      <label class="form-check-label collapsed" for="__product_description" data-bs-toggle="collapse" data-bs-target="#__form_textarea_wrapper" aria-expanded="false" aria-controls="__form_textarea_wrapper">
+                        Include: Product Description
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="__form_textarea_wrapper" class="collapse">
+                <div id="__toolbar"></div>
+                <div id="__editor"></div>
+              </div>
+            </div>
+            <div class="__form_button_wrapper">
+              <button id="__show_preview" type="button" class="btn">Show Preview</button>
+              <div id="__form_message"><!-- <span class="text-danger">No File Uploaded...</span> --></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="__footer">Copyright &copy; <a href="mailto:sdnath2020@gmail.com" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Mail to: sdnath2020@gmail.com">Dev Nath</a></div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="__preview_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="PreviewModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title" id="PreviewModalLabel">Template Preview</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div id="__preview_description" class="modal-body">
+            ...
+          </div>
+          <textarea id="__code_description" readonly></textarea>
+          <div class="modal-footer">
+            <button type="button" id="__modal_close" class="btn" data-bs-dismiss="modal">Close</button>
+            <!-- <button type="button" id="__download_image" class="btn">Download Image</button> -->
+            <button type="button" id="__copy_code" class="btn">Copy Code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/38.0.1/decoupled-document/ckeditor.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script> -->
+
+  
+    <script>
+
+      // Tooltip...
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+      // Selectors...
+      const editor_area = document.getElementById("__editor");
+      const copy_code = document.getElementById("__copy_code");
+      const form_file = document.getElementById("__form_file");
+      const toolbar_area = document.getElementById("__toolbar");
+      const part_numbers = document.getElementById("__part_numbers");
+      const show_preview = document.getElementById("__show_preview");
+      const form_message = document.getElementById("__form_message");
+      const preview_modal = document.getElementById("__preview_modal");
+      const fitment_chart = document.getElementById("__fitment_chart");
+      // const download_image = document.getElementById("__download_image");
+      const code_description = document.getElementById("__code_description");
+      const preview_description = document.getElementById("__preview_description");
+      const product_description = document.getElementById("__product_description");
+      
+      // CkEditor Document...
+      DecoupledEditor
+        .create(editor_area, {
+          toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'underline', 'fontColor', 'fontBackgroundColor', '|', 'alignment', 'bulletedList', 'numberedList', 'outdent', 'indent', 'blockQuote', 'link']
+        })
+        .then(editor => {
+          const toolbarContainer = toolbar_area
+          toolbarContainer.appendChild(editor.ui.view.toolbar.element) 
+        })
+        .catch(error => {
+          console.error(error)
+        });
+
+      // Modal...
+      var previewModal = new bootstrap.Modal(preview_modal, {});
+      show_preview.onclick = (e) => {
+
+        if (fitment_chart.checked || part_numbers.checked || product_description.checked) {
+          if (fitment_chart.checked || part_numbers.checked) {
+            if (form_file.files.length > 0) {
+              
+              let reader = new FileReader();
+              reader.readAsArrayBuffer(form_file.files[0]);
+
+              reader.onload = (e) => {
+                
+                let data = new Uint8Array(reader.result);
+                let work_book = XLSX.read(data, {type: 'array'});
+                let sheet_name = work_book.SheetNames;
+                let output_contnet = "";
+                let sheet_data_fitmaent;
+                let sheet_data_partNumbers;
+
+                if (sheet_name.includes("FITMENT")) {
+                  sheet_data_fitmaent = XLSX.utils.sheet_to_json(work_book.Sheets["FITMENT"], {header:1});  
+                }
+
+                if (sheet_name.includes("PART NUMBERS")) {
+                  sheet_data_partNumbers = XLSX.utils.sheet_to_json(work_book.Sheets["PART NUMBERS"], {header:1});  
+                }
+
+                if (fitment_chart.checked && sheet_data_fitmaent) {
+                  let output_array = [];
+                  let output_object = {};
+                  if (sheet_data_fitmaent.length > 0) {
+                    for (let row = 0; row < sheet_data_fitmaent.length; row++) {
+                      output_object[row] = [];
+                      for (let cell = 0; cell < Math.max(...sheet_data_fitmaent.map(x=>x.length)); cell++) {
+                        output_object[row].push(sheet_data_fitmaent[row][cell] ? sheet_data_fitmaent[row][cell].toString().trim() : "")
+                      }
+                    }
+                  }
+
+                  Object.values(output_object).forEach(v => {
+                    if (new Set(v).size != 1) {
+                      output_array.push(v);
+                    }
+                  });
+
+                  output_contnet += `<div class="__des_section"><div class="__des_section_title">Fitment Chart</div><div class="__des_section_content border-0 p-0"><div class="__table_col_five"><table><tr><td>${output_array[0][0]}</td><td>${output_array[0][1]}</td><td>${output_array[0][2]}</td><td>${output_array[0][3]}</td><td>${output_array[0][4]}</td></tr>`;
+
+                  for (let i = 1; i < output_array.length; i++) {
+                    output_contnet += `<tr><td>${output_array[i][0]}</td><td>${output_array[i][1]}</td><td>${output_array[i][2]}</td><td>${output_array[i][3]}</td><td>${output_array[i][4]}</td></tr>`;
+                  }
+
+                  output_contnet += `</table></div></div></div>`;
+                }
+
+                // part number
+                if (part_numbers.checked && sheet_data_partNumbers) {
+                  let output_array = [];
+                  let output_object = {};
+                  if (sheet_data_partNumbers.length > 0) {
+                    for (let row = 0; row < sheet_data_partNumbers.length; row++) {
+                      output_object[row] = [];
+                      for (let cell = 0; cell < Math.max(...sheet_data_partNumbers.map(x=>x.length)); cell++) {
+                        output_object[row].push(sheet_data_partNumbers[row][cell] ? sheet_data_partNumbers[row][cell].toString().trim() : "");
+                      }
+                    }
+                  }
+
+                  Object.values(output_object).forEach(v => {
+                    if (new Set(v).size != 1) {
+                      output_array.push(v);
+                    }
+                  });
+
+                  output_contnet += `<div class="__des_section"><div class="__des_section_title">Interchange Part Numbers</div><div class="__des_section_content border-0 p-0"><div class="__table_col_two"><table>`;
+
+                  for (let i = 0; i < output_array.length; i++) {
+                    output_contnet += `<tr><td>${output_array[i][0]}</td><td>${output_array[i][1]}</td></tr>`;
+                  }
+                  
+                  output_contnet += `</table></div></div></div>`;
+                }
+
+                // description
+                if (product_description.checked) {
+                  output_contnet += `<div class="__des_section"><div class="__des_section_title">Product Description</div><div class="__des_section_content">${ editor_area.innerHTML }</div></div>`;
+                  output_contnet += `<div class="__des_section d-none"><div class="__des_section_title">Product Description</div><div class="__des_section_content">${ editor_area.innerHTML }</div></div>`;
+                }
+
+                preview_description.innerHTML = code_description.value = output_contnet;
+                previewModal.show();
+
+              }
+
+            } else {
+              form_message.innerText = "No File Uploaded!";
+              setTimeout(()=>{
+                form_message.innerText = "";
+              }, 2500)
+            }
+          } else {
+            preview_description.innerHTML = code_description.value = `<div class="__des_section"><div class="__des_section_title">Product Description</div><div class="__des_section_content">${ editor_area.innerHTML }</div></div>`;
+            previewModal.show();
+          }
+        } else {
+          form_message.innerText = "No Option Selected!";
+          setTimeout(()=>{
+            form_message.innerText = "";
+          }, 2500)
+        }
+      }
+
+      // Download Image
+      // download_image.addEventListener("click", () => {
+      //   download_image.innerText = "Downloading...";
+      //   let des_section = preview_description.getElementsByClassName("__des_section");
+      //   [...des_section].forEach( des => {
+      //     domtoimage.toJpeg(des, {
+      //       width: des.clientWidth * 5,
+      //       height: des.clientHeight * 5,
+      //       style: {
+      //         display: "block",
+      //         backgroundColor: "#FFFFFF",
+      //         transform: "scale(5)",
+      //         transformOrigin: "top left"
+      //       }
+      //     })
+      //     .then( dataUrl =>{
+      //       var link = document.createElement("a");
+      //       link.download = `${new Date().getTime()}___${des.getElementsByClassName("__des_section_title")[0].innerText.toLowerCase().replace(/\s/g,"_")}.jpeg`;
+      //       link.href = dataUrl;
+      //       link.click();
+      //       setTimeout(()=>{
+      //         download_image.innerText = "Download Image";
+      //       }, 2500)
+      //       link.remove();
+      //     })
+      //     .catch( error => {
+      //       console.error('oops, something went wrong!', error);
+      //       setTimeout(()=>{
+      //         download_image.innerText = "Download Image";
+      //       }, 1000)
+      //     });
+      //   });
+      // });
+
+      // Copy to clipboard...
+      copy_code.onclick = (e) => {
+        code_description.select()
+        navigator.clipboard.writeText(code_description.value);
+        copy_code.innerText = "Copied"
+        setTimeout(()=>{
+          copy_code.innerText = "Copy Code"
+        }, 2500)
+      }
+
+    </script>
+  </body>
+</html>
